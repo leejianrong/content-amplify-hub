@@ -41,20 +41,21 @@ const buildNotionProperties = (contentUrl, hnUrl, mediumUrl, twitterUpdateUrl, l
   return properties;
 };
 
-// Close the loop after a successful Hashnode publish: record the live URL and
-// post ID, then flip Status to "Published" so the page is never picked up again.
-export const markPublished = async (pageId, hashnodeUrl, hashnodePostId) => {
+// Close the loop after a successful dev.to publish: record the live URL and
+// article ID, then flip Status to "Published" so the page is never picked up
+// again.
+export const markPublished = async (pageId, articleUrl, articleId) => {
   const properties = {
     Status: { select: { name: "Published" } },
   };
 
-  if (hashnodeUrl) {
-    properties["Hashnode URL"] = { url: hashnodeUrl };
+  if (articleUrl) {
+    properties["Dev.to URL"] = { url: articleUrl };
   }
 
-  if (hashnodePostId) {
-    properties["Hashnode Post ID"] = {
-      rich_text: [{ text: { content: hashnodePostId } }],
+  if (articleId) {
+    properties["Dev.to Article ID"] = {
+      rich_text: [{ text: { content: String(articleId) } }],
     };
   }
 

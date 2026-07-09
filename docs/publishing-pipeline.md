@@ -9,7 +9,7 @@ articles get written, reviewed, and published. It reflects the plan as of
 Use agentic LLMs (e.g. Claude Code) to write educational, insightful articles on
 **software engineering** and **software architecture**. Articles are drafted
 privately into Notion, reviewed by a human, and — once approved — automatically
-published to Hashnode via GitHub Actions.
+published to dev.to via GitHub Actions.
 
 Notion is the **source of truth and review board**. The GitHub Actions pipeline is
 the **automated publisher**.
@@ -28,11 +28,11 @@ the **automated publisher**.
               ▼
    ┌─────────────────────┐   Queries the DB for Status = "Ready to Publish"
    │  Publish pipeline   │   (oldest first, one per run) → notion-to-md →
-   │  (this repo)        │   publishHashnode()
+   │  (this repo)        │   publishDevTo()
    └──────────┬──────────┘
               ▼
-   ┌─────────────────────┐   On success: write the Hashnode URL back to the page
-   │  Hashnode (live)    │   and flip Status → "Published"
+   ┌─────────────────────┐   On success: write the dev.to URL back to the page
+   │  dev.to (live)      │   and flip Status → "Published"
    └─────────────────────┘
 ```
 
@@ -50,9 +50,9 @@ the **automated publisher**.
 4. **Publish (automation).** On a schedule, GitHub Actions runs the pipeline in
    this repo. It queries Notion for the **oldest** page with
    `Status = "Ready to Publish"`, converts the page body to Markdown, and
-   publishes it to Hashnode via the GraphQL `publishPost` mutation.
+   publishes it to dev.to via the Forem `POST /api/articles` endpoint.
 5. **Close the loop (automation).** On a successful publish, the pipeline writes
-   the returned Hashnode URL (and post ID) back to the page and sets
+   the returned dev.to URL (and article ID) back to the page and sets
    `Status = "Published"`.
 
 ### Trigger logic
@@ -72,27 +72,27 @@ The `Tech Blog Pipeline` database uses these properties:
 
 | Property           | Type          | Purpose                                                                 |
 | ------------------ | ------------- | ----------------------------------------------------------------------- |
-| **Name**           | Title         | Article title (sent to Hashnode).                                       |
+| **Name**           | Title         | Article title (sent to dev.to).                                         |
 | **Status**         | Select        | `Draft` → `Ready to Publish` → `Published`.                            |
-| **Subtitle**       | Text          | Hashnode subtitle / SEO description.                                     |
-| **Hashnode Tag IDs** | Multi-select | Hashnode tag **IDs** (not free text) from Hashnode's `tags.json`.       |
-| **Cover Image**    | URL           | Optional cover image. Auto-generated if left empty (see below).          |
-| **Hashnode URL**   | URL           | Empty on draft; filled by the pipeline after publishing.                |
-| **Hashnode Post ID** | Text        | Empty on draft; filled by the pipeline (enables future updates/dedup).  |
+| **Subtitle**       | Text          | dev.to article description (social/SEO preview).                        |
+| **Dev.to Tags**    | Multi-select  | Plain tag names, lowercase & alphanumeric, max 4 (e.g. `ai`, `career`). |
+| **Cover Image**    | URL           | Optional cover (dev.to `main_image`). Auto-generated if empty (below).  |
+| **Dev.to URL**     | URL           | Empty on draft; filled by the pipeline after publishing.                |
+| **Dev.to Article ID** | Text       | Empty on draft; filled by the pipeline (enables future updates/dedup).  |
 
 Notes:
 
 - **Metadata belongs in properties, not the body.** Do not embed YAML frontmatter
   (`---title: ...---`) in the page body — `notion-to-md` would render it as
   literal text inside the published post.
-- **Hashnode requires tag IDs**, not arbitrary tag names. Reference:
-  <https://github.com/Hashnode/support/blob/main/misc/tags.json>.
+- **dev.to tags are plain names**, lowercase and alphanumeric only (no spaces or
+  hyphens), max 4 per article. New tags are created on first use.
 - **Cover images are auto-generated when `Cover Image` is empty.**
   `utils/cover/mesh.js` builds a soft, swirling mesh-gradient SVG seeded
   deterministically from the article title (same post → same image);
   `utils/cover/hostCover.js` rasterizes it to PNG via `@resvg/resvg-js`, commits
   it to `covers/` on `main`, and uses the `raw.githubusercontent.com` URL as the
-  Hashnode cover. Generation is best-effort — a failure never blocks publishing,
+  dev.to `main_image`. Generation is best-effort — a failure never blocks publishing,
   and it only commits when running in CI. Set `Cover Image` manually to override.
 
 ## Connecting Claude Code to Notion
@@ -117,33 +117,38 @@ Two separate connections are involved:
 For the scheduled publish workflow:
 
 - `NOTION_TOKEN`, `NOTION_DB_ID`
-- `HASHNODE_TOKEN`, `HASHNODE_PUBLICATION_ID`
+- `DEVTO_TOKEN` (dev.to API key)
 - `ENVIRONMENT=production`
 - Email (failure/success alerts): `USER_TO_EMAIL`, `USER_FROM_EMAIL`,
   `USER_PASSWORD`, `SMTP_HOST`, `SMTP_PORT`
 
 ## Implementation Notes (this repo)
 
-This repo (a fork of Content-Amplify-Hub) already contains a working
-Notion → Hashnode publisher. Adapting it to the plan above requires:
+This repo (a fork of Content-Amplify-Hub) implements the pipeline as:
 
-1. **Trigger** (`utils/fetch/notion.js`): filter the production query by
-   `Status = "Ready to Publish"` (oldest first), instead of the current
-   `Publishing Date` window.
-2. **Fetch** (`services/fetchContent.js`): map the simplified schema and publish
-   the whole page body (drop the `## Introduction` slicing).
-3. **Publish** (`services/publishContent.js`): Hashnode only for now.
-4. **Close the loop** (`utils/success/notion.js`): write `Hashnode URL` /
-   `Hashnode Post ID` and set `Status = "Published"`.
-5. **Cron** (`.github/workflows/amplify.yml`): a status-draining schedule (e.g.
-   hourly), replacing the current Twitter-only crons.
+1. **Trigger** (`utils/fetch/notion.js`): production query filters by
+   `Status = "Ready to Publish"`, oldest first, one per run.
+2. **Fetch** (`services/fetchContent.js`): maps the schema above and publishes
+   the whole page body.
+3. **Publish** (`services/publishContent.js` → `utils/publish/devTo.js`): posts
+   to dev.to via the Forem API.
+4. **Close the loop** (`utils/success/notion.js`): writes `Dev.to URL` /
+   `Dev.to Article ID` and sets `Status = "Published"`.
+5. **Cron** (`.github/workflows/amplify.yml`): hourly status-draining schedule
+   plus manual `workflow_dispatch`.
+
+> **Why dev.to, not Hashnode?** The original target was Hashnode, but on
+> 2026-05-13 Hashnode moved its entire GraphQL API (queries *and* the
+> `publishPost` mutation) behind a paid Pro plan, so free programmatic publishing
+> is no longer possible there. dev.to's Forem API is free. The Hashnode publisher
+> module remains in `utils/publish/hashnode.js` if a Pro plan is ever added.
 
 ## Future Work
 
-The pipeline is intentionally scoped to **Hashnode only** for now. Planned
+The pipeline is intentionally scoped to **dev.to only** for now. Planned
 extensions:
 
-- **Additional publishing targets:** Medium, Dev.to, Twitter/X, LinkedIn.
+- **Additional publishing targets:** Hashnode (requires Pro), Medium, Twitter/X, LinkedIn.
   Publisher modules for these already exist in `utils/publish/` from the upstream
   project and can be re-enabled per article.
 - **Per-article channel selection:** let a page declare which platforms it should
