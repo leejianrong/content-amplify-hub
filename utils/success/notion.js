@@ -5,46 +5,9 @@ const notion = new Client({
   auth: process.env.NOTION_TOKEN,
 });
 
-const buildNotionProperties = (contentUrl, hnUrl, mediumUrl, twitterUpdateUrl, linkedInUpdateUrl) => {
-  const properties = {};
-
-  if (contentUrl !== "") {
-    properties["Content Link"] = {
-      url: contentUrl,
-    };
-  }
-
-  if (hnUrl !== "") {
-    properties["Hashnode Link"] = {
-      url: hnUrl,
-    };
-  }
-
-  if (mediumUrl !== "") {
-    properties["Medium Link"] = {
-      url: mediumUrl,
-    };
-  }
-
-  if (twitterUpdateUrl !== "") {
-    properties["Twitter Update"] = {
-      url: twitterUpdateUrl,
-    };
-  }
-
-  if (linkedInUpdateUrl !== "") {
-    properties["LinkedIn Update"] = {
-      url: linkedInUpdateUrl,
-    };
-  }
-
-  return properties;
-};
-
-// Close the loop after a successful dev.to publish: record the live URL and
-// article ID, then flip Status to "Published" so the page is never picked up
-// again.
-export const markPublished = async (pageId, articleUrl, articleId) => {
+// Pure: the Notion property patch applied on a successful publish. Exported for
+// unit testing.
+export const buildPublishedProperties = (articleUrl, articleId) => {
   const properties = {
     Status: { select: { name: "Published" } },
   };
@@ -59,35 +22,20 @@ export const markPublished = async (pageId, articleUrl, articleId) => {
     };
   }
 
-  try {
-    await notion.pages.update({ page_id: pageId, properties });
-  } catch (error) {
-    await sendEmail("Notion Update - API Error", error.message);
-    process.exit(1);
-  }
+  return properties;
 };
 
-export const updateNotionPageUrl = async (
-  pageId,
-  contentUrl,
-  hnUrl,
-  mediumUrl,
-  twitterUpdateUrl,
-  linkedInUpdateUrl
-) => {
-  if (contentUrl === "" && hnUrl === "" && mediumUrl === "" && twitterUpdateUrl === "" && linkedInUpdateUrl === "") {
-    return;
-  }
-
-  const properties = buildNotionProperties(contentUrl, hnUrl, mediumUrl, twitterUpdateUrl, linkedInUpdateUrl);
-
+// Close the loop after a successful dev.to publish: record the live URL and
+// article ID, then flip Status to "Published" so the page is never picked up
+// again (unless a human flips it back to re-publish an edit).
+export const markPublished = async (pageId, articleUrl, articleId) => {
   try {
     await notion.pages.update({
       page_id: pageId,
-      properties,
+      properties: buildPublishedProperties(articleUrl, articleId),
     });
   } catch (error) {
-    await sendEmail("Notion Update - API Error:", error.message);
+    await sendEmail("Notion Update - API Error", error.message);
     process.exit(1);
   }
 };

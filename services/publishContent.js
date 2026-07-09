@@ -12,11 +12,17 @@ export const publishContent = async (notionData) => {
   }
 
   if (!url) {
-    // publishDevTo already emailed the error. Leave Status as
-    // "Ready to Publish" so the next scheduled run retries this page.
+    // publishDevTo already emailed the error. Leave Status as "Ready to
+    // Publish" so the next scheduled run retries this page.
     process.exit(1);
   }
 
   await markPublished(notionData.pageId, url, id);
-  await sendEmail("Publish - Success", `Published to dev.to: ${url}`);
+
+  // The publish already succeeded; a mail hiccup must not fail the run.
+  try {
+    await sendEmail("Publish - Success", `Published to dev.to: ${url}`);
+  } catch (error) {
+    console.error("Success email failed (non-fatal):", error.message);
+  }
 };
