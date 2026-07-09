@@ -8,26 +8,18 @@ const publishPostMutation = `
   mutation PublishPost($input: PublishPostInput!) {
     publishPost(input: $input) {
       post {
+        id
         title
+        subtitle
+        url
         publication {
           id
         }
-        content {
-          markdown
-        }
-        url
         coverImage {
           url
         }
         tags {
           id
-        }
-        ogMetaData {
-          image
-        }
-        seo {
-          title
-          description
         }
         features {
           tableOfContents {
@@ -65,24 +57,33 @@ export const publishHashnode = async (hashnodeContent) => {
     title,
     publicationId,
     contentMarkdown,
+    subtitle,
     coverImageOptions,
     tags,
-    metaTags,
     settings,
   } = hashnodeContent;
 
-  const variables = {
-    input: {
-      title,
-      publicationId,
-      contentMarkdown,
-      coverImageOptions,
-      tags,
-      metaTags,
-      settings,
-    },
+  const input = {
+    title,
+    publicationId,
+    contentMarkdown,
+    tags,
+    settings,
   };
+  if (subtitle) {
+    input.subtitle = subtitle;
+  }
+  // Only attach a cover when one was set — an empty URL is rejected.
+  if (coverImageOptions?.coverImageURL) {
+    input.coverImageOptions = coverImageOptions;
+  }
 
-  const response = await fetchGraphQL(publishPostMutation, variables);
-  return response === "" ? "" : response.publishPost.post.url;
+  const response = await fetchGraphQL(publishPostMutation, { input });
+  if (response === "") {
+    return { url: "", id: "" };
+  }
+  return {
+    url: response.publishPost.post.url,
+    id: response.publishPost.post.id,
+  };
 };

@@ -15,28 +15,25 @@ export const getPageProperties = async (notionData) => {
     });
     return response;
   } else {
-    const now = new Date();
     try {
+      // Publish the oldest page currently approved for publishing. Because we
+      // only ever match "Ready to Publish" (and flip it to "Published" on
+      // success), a page is never picked up twice — dedup is automatic.
       const response = await notion.databases.query({
         database_id: databaseId,
         filter: {
-          property: "Publishing Date",
-          date: {
-            is_not_empty: true,
-            after: now,
-            before: new Date(now.getTime() + 1 * 60 * 60 * 1000),
-          },
+          property: "Status",
+          select: { equals: "Ready to Publish" },
         },
-        sorts: [
-          {
-            property: "Publishing Date",
-            direction: "ascending",
-          },
-        ],
+        sorts: [{ timestamp: "created_time", direction: "ascending" }],
+        page_size: 1,
       });
       if (response.results.length === 0) {
-        await sendEmail("Nothing to post", "No results found");
-        process.exit(1);
+        // An empty queue is normal for a frequent drain cron, not a failure.
+        console.log(
+          'No pages with Status = "Ready to Publish". Nothing to do.'
+        );
+        process.exit(0);
       }
       return response.results[0];
     } catch (error) {

@@ -41,6 +41,31 @@ const buildNotionProperties = (contentUrl, hnUrl, mediumUrl, twitterUpdateUrl, l
   return properties;
 };
 
+// Close the loop after a successful Hashnode publish: record the live URL and
+// post ID, then flip Status to "Published" so the page is never picked up again.
+export const markPublished = async (pageId, hashnodeUrl, hashnodePostId) => {
+  const properties = {
+    Status: { select: { name: "Published" } },
+  };
+
+  if (hashnodeUrl) {
+    properties["Hashnode URL"] = { url: hashnodeUrl };
+  }
+
+  if (hashnodePostId) {
+    properties["Hashnode Post ID"] = {
+      rich_text: [{ text: { content: hashnodePostId } }],
+    };
+  }
+
+  try {
+    await notion.pages.update({ page_id: pageId, properties });
+  } catch (error) {
+    await sendEmail("Notion Update - API Error", error.message);
+    process.exit(1);
+  }
+};
+
 export const updateNotionPageUrl = async (
   pageId,
   contentUrl,

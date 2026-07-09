@@ -1,61 +1,26 @@
 import "dotenv/config";
 import { fetchContent } from "./services/fetchContent.js";
 import { publishContent } from "./services/publishContent.js";
+import { generateAndHostCover } from "./utils/cover/hostCover.js";
 import { sendEmail } from "./utils/failure/email.js";
 
 const notionData = {
   env: process.env.ENVIRONMENT,
   pageId: "",
-  channel: "",
-  devToContent: {
-    title: "",
-    main_image: "",
-    tags: [],
-    body_markdown: "",
-    published: true,
-    publishedUrl: "",
-  },
   hashnodeContent: {
     title: "",
     publicationId: "",
     contentMarkdown: "",
+    subtitle: "",
     coverImageOptions: {
       coverImageURL: "",
       isCoverAttributionHidden: true,
       stickCoverToBottom: false,
     },
     tags: [],
-    metaTags: {
-      title: "",
-      description: "",
-      image: "",
-    },
     settings: {
       enableTableOfContent: true,
     },
-    publishedUrl: "",
-  },
-  mediumContent: {
-    title: "",
-    contentFormat: "markdown",
-    content: "",
-    tags: [],
-    publishStatus: "public",
-    notifyFollowers: true,
-    publishedUrl: "",
-  },
-  linkedInContent: {
-    content: "",
-    articleUrl: "",
-    articleImage: "",
-    articleTitle: "",
-    publishedUrl: "",
-  },
-  twitterContent: {
-    content: "",
-    imageUrl: "",
-    retweetId: "",
-    publishedUrl: "",
   },
 };
 
@@ -76,9 +41,23 @@ const main = async () => {
     await sendEmail("Notion Fetch - Error", error.message);
     process.exit(1);
   }
+
+  // Auto-generate a cover only when the author didn't set one. Best-effort:
+  // a failure here must never block publishing, and it only pushes in CI.
+  const hn = notionData.hashnodeContent;
+  if (notionData.env === "production" && !hn.coverImageOptions.coverImageURL) {
+    try {
+      hn.coverImageOptions.coverImageURL = await generateAndHostCover(
+        notionData.pageId,
+        hn.title
+      );
+    } catch (error) {
+      await sendEmail("Cover Generation - Skipped", error.message);
+    }
+  }
+
   try {
-    await publishContent(notionData, "devTo", "twitter");
-    // await publishContent(notionData, "all", "all");
+    await publishContent(notionData);
   } catch (error) {
     await sendEmail("Publish Content - Error", error.message);
   }
