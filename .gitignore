@@ -1,2 +1,20 @@
+# Dependencies
+node_modules/
+
+# Environment & secrets
 .env
-node_modules
+.env.*
+!.env.example
+local.env
+gh.secrets
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
