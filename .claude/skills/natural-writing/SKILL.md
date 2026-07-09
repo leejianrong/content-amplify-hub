@@ -12,10 +12,16 @@ the way a thoughtful engineer writes, with rhythm and a point of view.
 ## The one rule that matters most: vary your rhythm
 
 LLM prose settles into a metronome, sentence after sentence in the 18-to-24-word
-range. Human prose is *bursty*. A short punch sits next to a long, winding thought
+range. Human prose varies. A short sentence can sit next to a long, winding thought
 that keeps unspooling clauses well past the point where a machine would have
-stopped. Then another short one. Fix your rhythm and half the other tells fix
-themselves.
+stopped. Fix your rhythm and half the other tells fix themselves.
+
+Vary rhythm, but don't manufacture choppiness. A wall of two- and three-word
+fragments is its own tell, and it reads as breathless. Even, flowing prose that
+joins its clauses with "and" and "but" is a perfectly human register too, often a
+calmer and more confident one. The goal is natural variation, not staccato for its
+own sake. When in doubt, prefer a complete sentence to a clipped fragment, and let
+the long-vs-short contrast come from the ideas rather than from chopping.
 
 Bad, uniform, every sentence the same length:
 
@@ -24,7 +30,7 @@ Bad, uniform, every sentence the same length:
 > the overall system more resilient to individual component failures. It also
 > enables teams to scale different parts of the system independently.
 
-Good, bursty, short then long then short:
+Good, varied, short then long then short:
 
 > Event-driven systems buy you one thing above all: decoupling. A service drops a
 > message and moves on, never knowing or caring who picks it up, which means a
@@ -113,6 +119,55 @@ Given a sample of the user's own writing, or a writer they admire, study its rhy
 and diction and match it. Showing a model good writing beats any list of rules. When
 in doubt, ask for a paragraph they consider "sounds like me" and use it as your north
 star.
+
+## Jian's voice (the profile for this project's articles)
+
+The general rules above are the floor. This section is the target. When writing as
+Jian for the Tech Blog Pipeline, match this profile. It was reverse-engineered from
+his hand-edits to a draft, so it reflects what he actually does, not what sounds
+good in the abstract. It will grow as more articles are edited.
+
+The evidence, with the full before/after diff and the reasoning behind each bullet
+below, lives in
+[references/case-study-hello-im-jian.md](references/case-study-hello-im-jian.md).
+Append each new article's diff there and revise this profile when the evidence
+disagrees.
+
+- **Even and flowing, not choppy.** Jian joins clauses with "and" and "but" rather
+  than breaking them into short fragments. He consistently rewrites punchy two-word
+  sentences ("Both count.", "Never both.", "More soon.") into complete ones ("They're
+  both valid approaches.", "There'll be more coming soon."). Do not reach for
+  staccato with him. His rhythm still varies, but it's calm.
+- **No narrator scaffolding.** He deletes every line that announces the structure of
+  the post: "A little background first.", "So why start writing now?", "A quick
+  opinion, because...". State the thing directly. Never signpost what you're about
+  to say.
+- **Understated, never showy.** He cuts quotable aphorisms and motivational
+  punchlines ("you're not obsolete, you're early", "a lesson worth stealing"). He
+  softens preachy phrasing ("pretending otherwise helps no one" becomes "it's hard
+  to pretend otherwise") and swaps dramatic verbs for plain ones ("rot our maths"
+  becomes "make kids bad at maths"). Avoid the thought-leader register entirely.
+- **Peer, not teacher.** He writes "we" where a lecture would write "you" ("we're
+  trying to keep up", "what we slow down for"). He stands alongside the reader as a
+  fellow learner. Keep "you" only for direct address, not for dispensing advice.
+- **Confident on values, humble on advice.** He states beliefs flatly ("LLMs and
+  coding agents are a good thing") but frames predictions and recommendations gently
+  ("I think we can still learn", "Hopefully this blog inspires you"). Mild hedging is
+  part of his voice here, and it's the one place the general "don't hedge" rule bends
+  for him. Never hedge the core belief; feel free to soften the takeaway.
+- **Concrete and true beats vivid-but-vague.** He keeps vivid language when it's
+  grounded ("flies by", "tear through thousands of lines", "fell for it", "2am") and
+  replaces cute filler with real detail ("all the glue in between" became "machine
+  learning applications on the side"). Accuracy about his own life matters to him;
+  don't invent color.
+- **Parentheses for asides.** His default aside punctuation is parentheses ("(one
+  function at a time)", "(which engineers are notoriously bad at)"), not dashes.
+- **British spelling and conventions.** "learnt", "specialised", "maths". He
+  capitalises proper names properly, including his degree ("Electrical and Electronic
+  Engineering").
+
+When unsure, err toward plainer, calmer, and more modest. If a line feels clever,
+he'll probably cut it.
 
 ## Case study: the offenses in this file's first draft
 
