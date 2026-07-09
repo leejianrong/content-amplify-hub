@@ -63,8 +63,12 @@ the **automated publisher**.
 - **Dedup is automatic.** Because the query only matches `Ready to Publish`, a
   page that has been flipped to `Published` is never picked up again. No ID
   comparison is required.
-- Cadence is controlled by how often articles are approved and by the cron
-  schedule (e.g. hourly to drain the queue, or once daily for a slower pace).
+- **Re-publishing an edit.** Flip a `Published` page back to `Ready to Publish`
+  to push an update: its `Dev.to Article ID` is still set, so the pipeline
+  updates the existing dev.to post in place (PUT) rather than creating a
+  duplicate.
+- Cadence is **one article per day** (cron `17 8 * * *`), plus manual
+  `workflow_dispatch`. Change the cron for a faster or slower pace.
 
 ## Notion Schema
 
@@ -89,11 +93,17 @@ Notes:
   hyphens), max 4 per article. New tags are created on first use.
 - **Cover images are auto-generated when `Cover Image` is empty.**
   `utils/cover/mesh.js` builds a soft, swirling mesh-gradient SVG seeded
-  deterministically from the article title (same post → same image);
-  `utils/cover/hostCover.js` rasterizes it to PNG via `@resvg/resvg-js`, commits
-  it to `covers/` on `main`, and uses the `raw.githubusercontent.com` URL as the
-  dev.to `main_image`. Generation is best-effort — a failure never blocks publishing,
-  and it only commits when running in CI. Set `Cover Image` manually to override.
+  deterministically from the article title (same post → same image), and
+  `utils/cover/hostCover.js` rasterizes it to PNG via `@resvg/resvg-js`. The PNG
+  is committed under `covers/` and served via its `raw.githubusercontent.com`
+  URL as the dev.to `main_image`. Set `Cover Image` manually to override.
+- **Inline body images are re-hosted too** (`utils/media/rehostImages.js`).
+  Notion serves page images from signed, expiring URLs, so before publishing the
+  pipeline downloads any Notion-hosted body images, commits them under `assets/`,
+  and rewrites the markdown to the repo raw URLs.
+- Asset hosting (cover + inline images) is **best-effort and CI-only**: both are
+  committed in a single push, and any failure is emailed but never blocks the
+  publish.
 
 ## Connecting Claude Code to Notion
 
@@ -134,8 +144,15 @@ This repo (a fork of Content-Amplify-Hub) implements the pipeline as:
    to dev.to via the Forem API.
 4. **Close the loop** (`utils/success/notion.js`): writes `Dev.to URL` /
    `Dev.to Article ID` and sets `Status = "Published"`.
-5. **Cron** (`.github/workflows/amplify.yml`): hourly status-draining schedule
+5. **Cron** (`.github/workflows/amplify.yml`): daily status-draining schedule
    plus manual `workflow_dispatch`.
+6. **Assets** (`utils/media/`, `utils/cover/`): re-host inline images and
+   generate the cover, committed under `assets/` / `covers/` and served via raw
+   URLs — batched into a single push per run.
+
+Unit tests (`npm test`, using Node's built-in test runner — no dependencies)
+cover the pure logic: property mapping, cover/slug determinism, image-URL
+rewriting, and the write-back property patch.
 
 > **Why dev.to, not Hashnode?** The original target was Hashnode, but on
 > 2026-05-13 Hashnode moved its entire GraphQL API (queries *and* the

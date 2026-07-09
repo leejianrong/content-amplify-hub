@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "node main.js",
-    "auth": "node utils/linkedInAuth/auth.js"
+    "auth": "node utils/linkedInAuth/auth.js",
+    "test": "node --test"
   },
   "type": "module",
   "dependencies": {

@@ -4,8 +4,9 @@ on:
   # Manual trigger for testing / draining on demand.
   workflow_dispatch:
   schedule:
-    # Hourly drain: publish the oldest page marked "Ready to Publish", if any.
-    - cron: "17 * * * *"
+    # Once daily (08:17 UTC): publish the oldest page marked "Ready to
+    # Publish", if any. Adjust the time to your timezone as needed.
+    - cron: "17 8 * * *"
 
 # The publish step commits auto-generated cover images back to covers/.
 permissions:
