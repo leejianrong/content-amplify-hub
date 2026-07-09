@@ -7,20 +7,13 @@ import { sendEmail } from "./utils/failure/email.js";
 const notionData = {
   env: process.env.ENVIRONMENT,
   pageId: "",
-  hashnodeContent: {
+  devToContent: {
     title: "",
-    publicationId: "",
-    contentMarkdown: "",
-    subtitle: "",
-    coverImageOptions: {
-      coverImageURL: "",
-      isCoverAttributionHidden: true,
-      stickCoverToBottom: false,
-    },
+    body_markdown: "",
+    description: "",
+    main_image: "",
     tags: [],
-    settings: {
-      enableTableOfContent: true,
-    },
+    published: true,
   },
 };
 
@@ -44,12 +37,12 @@ const main = async () => {
 
   // Auto-generate a cover only when the author didn't set one. Best-effort:
   // a failure here must never block publishing, and it only pushes in CI.
-  const hn = notionData.hashnodeContent;
-  if (notionData.env === "production" && !hn.coverImageOptions.coverImageURL) {
+  const article = notionData.devToContent;
+  if (notionData.env === "production" && !article.main_image) {
     try {
-      hn.coverImageOptions.coverImageURL = await generateAndHostCover(
+      article.main_image = await generateAndHostCover(
         notionData.pageId,
-        hn.title
+        article.title
       );
     } catch (error) {
       await sendEmail("Cover Generation - Skipped", error.message);

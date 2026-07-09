@@ -34,8 +34,7 @@ jobs:
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DB_ID: ${{ secrets.NOTION_DB_ID }}
-          HASHNODE_TOKEN: ${{ secrets.HASHNODE_TOKEN }}
-          HASHNODE_PUBLICATION_ID: ${{ secrets.HASHNODE_PUBLICATION_ID }}
+          DEVTO_TOKEN: ${{ secrets.DEVTO_TOKEN }}
           USER_TO_EMAIL: ${{ secrets.USER_TO_EMAIL }}
           USER_FROM_EMAIL: ${{ secrets.USER_FROM_EMAIL }}
           USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
