@@ -1,28 +1,15 @@
 name: Amplify Content
 
 on:
+  # Manual trigger for testing / draining on demand.
+  workflow_dispatch:
   schedule:
-    # Blog Post, LinkedIn & Twitter
-    # - cron: "53 0 * * 2,6" # Blog Post
-    # - cron: "43 3 * * *" # Twitter Morning
-    # - cron: "53 6 * * 0,1,3,4,5" # Twitter Afternoon
-    # - cron: "47 12 * * 0,1,3,4,5" # LinkedIn
-    # - cron: "47 15 * * *" # Twitter Evening
+    # Hourly drain: publish the oldest page marked "Ready to Publish", if any.
+    - cron: "17 * * * *"
 
-    # Blog Post & Twitter
-    # - cron: "53 0 * * 2,6" # Blog Post
-    # - cron: "43 3 * * *" # Twitter Morning
-    # - cron: "53 6 * * 0,1,3,4,5" # Twitter Afternoon
-    # - cron: "47 15 * * *" # Twitter Evening
-
-    # Twitter only
-    - cron: "47 0 * * *"
-    - cron: "47 3 * * *"
-    - cron: "47 6 * * *"
-    - cron: "47 9 * * *"
-    - cron: "47 12 * * *"
-    - cron: "47 15 * * *"
-    - cron: "47 18 * * *"
+# The publish step commits auto-generated cover images back to covers/.
+permissions:
+  contents: write
 
 jobs:
   fetch_publish_content:
@@ -31,6 +18,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Keep the token so the run can push the cover commit.
+          persist-credentials: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -42,21 +32,10 @@ jobs:
 
       - name: Fetch and publish content
         env:
-          NOTION_DOMAIN: ${{ secrets.NOTION_DOMAIN }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DB_ID: ${{ secrets.NOTION_DB_ID }}
-          DEVTO_TOKEN: ${{ secrets.DEVTO_TOKEN }}
           HASHNODE_TOKEN: ${{ secrets.HASHNODE_TOKEN }}
           HASHNODE_PUBLICATION_ID: ${{ secrets.HASHNODE_PUBLICATION_ID }}
-          MEDIUM_TOKEN: ${{ secrets.MEDIUM_TOKEN }}
-          MEDIUM_AUTHOR_ID: ${{ secrets.MEDIUM_AUTHOR_ID }}
-          TWITTER_PROFILE_NAME: ${{ secrets.TWITTER_PROFILE_NAME }}
-          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
-          TWITTER_API_KEY_SECRET: ${{ secrets.TWITTER_API_KEY_SECRET }}
-          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN}}
-          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
-          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
-          LINKEDIN_URN: ${{ secrets.LINKEDIN_URN }}
           USER_TO_EMAIL: ${{ secrets.USER_TO_EMAIL }}
           USER_FROM_EMAIL: ${{ secrets.USER_FROM_EMAIL }}
           USER_PASSWORD: ${{ secrets.USER_PASSWORD }}

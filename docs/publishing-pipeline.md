@@ -76,7 +76,7 @@ The `Tech Blog Pipeline` database uses these properties:
 | **Status**         | Select        | `Draft` → `Ready to Publish` → `Published`.                            |
 | **Subtitle**       | Text          | Hashnode subtitle / SEO description.                                     |
 | **Hashnode Tag IDs** | Multi-select | Hashnode tag **IDs** (not free text) from Hashnode's `tags.json`.       |
-| **Cover Image**    | URL           | Optional cover image.                                                    |
+| **Cover Image**    | URL           | Optional cover image. Auto-generated if left empty (see below).          |
 | **Hashnode URL**   | URL           | Empty on draft; filled by the pipeline after publishing.                |
 | **Hashnode Post ID** | Text        | Empty on draft; filled by the pipeline (enables future updates/dedup).  |
 
@@ -87,6 +87,13 @@ Notes:
   literal text inside the published post.
 - **Hashnode requires tag IDs**, not arbitrary tag names. Reference:
   <https://github.com/Hashnode/support/blob/main/misc/tags.json>.
+- **Cover images are auto-generated when `Cover Image` is empty.**
+  `utils/cover/mesh.js` builds a soft, swirling mesh-gradient SVG seeded
+  deterministically from the article title (same post → same image);
+  `utils/cover/hostCover.js` rasterizes it to PNG via `@resvg/resvg-js`, commits
+  it to `covers/` on `main`, and uses the `raw.githubusercontent.com` URL as the
+  Hashnode cover. Generation is best-effort — a failure never blocks publishing,
+  and it only commits when running in CI. Set `Cover Image` manually to override.
 
 ## Connecting Claude Code to Notion
 
